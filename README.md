@@ -32,7 +32,9 @@ Add the package dependency to your `pubspec.yaml`:
 ```yaml
 dependencies:
   png_series_animator:
-    path: ../ # Or point to git / pub.dev once published
+    git:
+      url: https://github.com/amirr-dotcom/png_series_animator.git
+      ref: main
 ```
 
 Define your animation assets folder in your project's `pubspec.yaml`:
