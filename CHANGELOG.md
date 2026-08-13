@@ -1,3 +1,8 @@
+## 1.0.1
+
+* Improved full-screen orientation exit logic to reliably restore portrait mode and system UI.
+* Enhanced code formatting and indentation for better maintainability.
+
 ## 1.0.0
 
 * Initial stable release.

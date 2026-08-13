@@ -31,7 +31,7 @@ Add the package dependency to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  png_series_animator: ^1.0.0
+  png_series_animator: ^1.0.1
 ```
 
 Define your animation assets folder in your project's `pubspec.yaml`:
@@ -125,3 +125,12 @@ Check the `/example` directory for a full, premium showcase application that inc
 5. **Scale Zoom**
 6. **Spin Flip**
 7. **Blur Dissolve**
+
+---
+
+## Contact & Support
+
+For questions, issues, or suggestions, feel free to reach out:
+- **GitHub**: [amirr-dotcom](https://github.com/amirr-dotcom)
+- **Email**: shaizeeabbas.sa@gmail.com
+

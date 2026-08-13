@@ -4,11 +4,11 @@ import 'package:flutter/services.dart';
 import 'utils/image_cache_manager.dart';
 
 typedef PngSeriesTransitionBuilder = Widget Function(
-  BuildContext context,
-  Widget currentFrame,
-  Widget nextFrame,
-  double progress,
-);
+    BuildContext context,
+    Widget currentFrame,
+    Widget nextFrame,
+    double progress,
+    );
 
 class PngSeriesAnimator extends StatefulWidget {
   final List<String> imagePaths;
@@ -120,7 +120,7 @@ class _PngSeriesAnimatorState extends State<PngSeriesAnimator>
 
     // We do NOT call _updateAnimationState() here anymore.
     // Startup will be managed by _precacheImages once initial buffer is ready.
-    
+
     if (widget.showControls) {
       _startHideTimer();
     }
@@ -159,17 +159,17 @@ class _PngSeriesAnimatorState extends State<PngSeriesAnimator>
   Future<void> _precacheImages() async {
     final cacheManager = ImageCacheManager();
     final int total = widget.imagePaths.length;
-    
+
     // 1. Load the essential startup buffer (First 15% or at least 5 frames)
     // We wait for these to be FULLY ready before showing anything to the user.
     final int startupBufferCount = (total * 0.15).ceil().clamp(3, 8);
-    
+
     for (int i = 0; i < startupBufferCount; i++) {
       if (i < total) {
         await _loadFrame(i, cacheManager);
       }
     }
-    
+
     // 2. Start the show
     if (mounted) {
       setState(() {
@@ -177,7 +177,7 @@ class _PngSeriesAnimatorState extends State<PngSeriesAnimator>
         _updateAnimationState();
       });
     }
-    
+
     // 3. Load all remaining frames in parallel in the background
     // We don't await these, they will fill the buffer as the user watches.
     for (int i = startupBufferCount; i < total; i++) {
@@ -188,7 +188,7 @@ class _PngSeriesAnimatorState extends State<PngSeriesAnimator>
   Future<void> _loadFrame(int index, ImageCacheManager cacheManager) async {
     if (!mounted) return;
     final path = widget.imagePaths[index];
-    
+
     if (_imageProviders.containsKey(path) && _loadedIndices.contains(index)) return;
 
     ImageProvider provider;
@@ -212,7 +212,7 @@ class _PngSeriesAnimatorState extends State<PngSeriesAnimator>
         final ImageStream stream = provider.resolve(createLocalImageConfiguration(context));
         final Completer<void> completer = Completer<void>();
         final ImageStreamListener listener = ImageStreamListener(
-          (ImageInfo info, bool synchronousCall) {
+              (ImageInfo info, bool synchronousCall) {
             if (mounted) {
               setState(() {
                 _aspectRatio = info.image.width / info.image.height;
@@ -235,7 +235,7 @@ class _PngSeriesAnimatorState extends State<PngSeriesAnimator>
       if (mounted) {
         setState(() {
           _loadedIndices.add(index);
-          
+
           // BUFFER RESUMPTION
           if (_isBuffering) {
             final int total = widget.imagePaths.length;
@@ -269,12 +269,12 @@ class _PngSeriesAnimatorState extends State<PngSeriesAnimator>
     } else if (oldWidget.repeat != widget.repeat) {
       _updateAnimationState();
     }
-    
+
     if (oldWidget.imagePaths != widget.imagePaths) {
-       _imageProviders.clear();
-       _loadedIndices.clear();
-       _precached = false;
-       _precacheImages();
+      _imageProviders.clear();
+      _loadedIndices.clear();
+      _precached = false;
+      _precacheImages();
     }
   }
 
@@ -335,11 +335,11 @@ class _PngSeriesAnimatorState extends State<PngSeriesAnimator>
     setState(() {
       _controller.value = newValue;
     });
-    
+
     if (_isPlaying) {
       _updateAnimationState();
     }
-    
+
     _showOverlayIcon(icon: seconds > 0 ? Icons.forward_10 : Icons.replay_10);
     _startHideTimer();
   }
@@ -388,15 +388,14 @@ class _PngSeriesAnimatorState extends State<PngSeriesAnimator>
       ),
     );
 
-    if (isLandscape) {
-      SystemChrome.setPreferredOrientations([
-        DeviceOrientation.portraitUp,
-        DeviceOrientation.portraitDown,
-        DeviceOrientation.landscapeLeft,
-        DeviceOrientation.landscapeRight,
-      ]);
-      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    }
+    // Reset orientations and UI mode when returning from full screen
+    // Force the app back to portrait mode (only Up for maximum compatibility)
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+    ]);
+
+    // Always restore the system UI (status bar and navigation bar)
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   }
 
   String _formatDuration(Duration duration) {
@@ -420,166 +419,166 @@ class _PngSeriesAnimatorState extends State<PngSeriesAnimator>
       duration: const Duration(milliseconds: 500),
       child: !_precached
           ? SizedBox(
-              key: const ValueKey('loader'),
-              width: widget.width,
-              height: widget.height,
-              child: const Center(child: CircularProgressIndicator()),
-            )
+        key: const ValueKey('loader'),
+        width: widget.width,
+        height: widget.height,
+        child: const Center(child: CircularProgressIndicator()),
+      )
           : AnimatedBuilder(
-              key: const ValueKey('animator'),
-              animation: _controller,
-              builder: (context, child) {
-                final double value = _controller.value;
-                final int totalFrames = widget.imagePaths.length;
-                final int frameIndex = (value * totalFrames).floor().clamp(0, totalFrames - 1);
+        key: const ValueKey('animator'),
+        animation: _controller,
+        builder: (context, child) {
+          final double value = _controller.value;
+          final int totalFrames = widget.imagePaths.length;
+          final int frameIndex = (value * totalFrames).floor().clamp(0, totalFrames - 1);
 
-                // Buffering Logic: If the current frame isn't loaded yet
-                if (!_loadedIndices.contains(frameIndex) && !_isBuffering) {
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (mounted && !_isBuffering) {
-                      setState(() {
-                        _isBuffering = true;
-                        _controller.stop();
-                      });
-                    }
-                  });
-                }
+          // Buffering Logic: If the current frame isn't loaded yet
+          if (!_loadedIndices.contains(frameIndex) && !_isBuffering) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted && !_isBuffering) {
+                setState(() {
+                  _isBuffering = true;
+                  _controller.stop();
+                });
+              }
+            });
+          }
 
-                Widget imageWidget;
-                if (totalFrames == 0) {
-                  imageWidget = const SizedBox.shrink();
-                } else if (totalFrames == 1) {
-                  imageWidget = _buildImage(widget.imagePaths.first);
-                } else {
-                  final double exactFrame = value * (totalFrames - 1);
-                  
-                  if (widget.transitionBuilder == null) {
-                    imageWidget = _buildImage(widget.imagePaths[frameIndex]);
-                  } else {
-                    final int currentFrameIndex = exactFrame.floor();
-                    final int nextFrameIndex = (currentFrameIndex + 1) < totalFrames
-                        ? currentFrameIndex + 1
-                        : currentFrameIndex;
-                    final double progressToNextFrame = exactFrame - currentFrameIndex;
-                    imageWidget = widget.transitionBuilder!(
-                      context,
-                      _buildImage(widget.imagePaths[currentFrameIndex]),
-                      _buildImage(widget.imagePaths[nextFrameIndex]),
-                      progressToNextFrame,
-                    );
-                  }
-                }
+          Widget imageWidget;
+          if (totalFrames == 0) {
+            imageWidget = const SizedBox.shrink();
+          } else if (totalFrames == 1) {
+            imageWidget = _buildImage(widget.imagePaths.first);
+          } else {
+            final double exactFrame = value * (totalFrames - 1);
 
-                if (widget.heroTag != null) {
-                  imageWidget = Hero(tag: widget.heroTag!, child: imageWidget);
-                }
+            if (widget.transitionBuilder == null) {
+              imageWidget = _buildImage(widget.imagePaths[frameIndex]);
+            } else {
+              final int currentFrameIndex = exactFrame.floor();
+              final int nextFrameIndex = (currentFrameIndex + 1) < totalFrames
+                  ? currentFrameIndex + 1
+                  : currentFrameIndex;
+              final double progressToNextFrame = exactFrame - currentFrameIndex;
+              imageWidget = widget.transitionBuilder!(
+                context,
+                _buildImage(widget.imagePaths[currentFrameIndex]),
+                _buildImage(widget.imagePaths[nextFrameIndex]),
+                progressToNextFrame,
+              );
+            }
+          }
 
-                Widget content = imageWidget;
+          if (widget.heroTag != null) {
+            imageWidget = Hero(tag: widget.heroTag!, child: imageWidget);
+          }
 
-                // Overlay buffer loader if necessary
-                if (_isBuffering) {
-                  content = Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      imageWidget,
-                      Container(
-                        color: Colors.black26,
-                        child: const Center(
-                          child: CircularProgressIndicator(color: Colors.white70),
-                        ),
-                      ),
-                    ],
-                  );
-                }
+          Widget content = imageWidget;
 
-                if (!widget.showControls) {
-                  return SizedBox(width: widget.width, height: widget.height, child: content);
-                }
+          // Overlay buffer loader if necessary
+          if (_isBuffering) {
+            content = Stack(
+              fit: StackFit.expand,
+              children: [
+                imageWidget,
+                Container(
+                  color: Colors.black26,
+                  child: const Center(
+                    child: CircularProgressIndicator(color: Colors.white70),
+                  ),
+                ),
+              ],
+            );
+          }
 
-                return MouseRegion(
-                  onHover: (_) {
-                    if (!_controlsVisible) {
-                      setState(() {
-                        _controlsVisible = true;
-                        _startHideTimer();
-                      });
+          if (!widget.showControls) {
+            return SizedBox(width: widget.width, height: widget.height, child: content);
+          }
+
+          return MouseRegion(
+            onHover: (_) {
+              if (!_controlsVisible) {
+                setState(() {
+                  _controlsVisible = true;
+                  _startHideTimer();
+                });
+              }
+            },
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return GestureDetector(
+                  onTap: _toggleControls,
+                  onDoubleTap: () {},
+                  onDoubleTapDown: (details) {
+                    final double width = constraints.maxWidth;
+                    if (details.localPosition.dx < width / 2) {
+                      _seekRelative(-10);
+                    } else {
+                      _seekRelative(10);
                     }
                   },
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      return GestureDetector(
-                        onTap: _toggleControls,
-                        onDoubleTap: () {},
-                        onDoubleTapDown: (details) {
-                          final double width = constraints.maxWidth;
-                          if (details.localPosition.dx < width / 2) {
-                            _seekRelative(-10);
-                          } else {
-                            _seekRelative(10);
-                          }
-                        },
-                        child: SizedBox(
-                          width: widget.width,
-                          height: widget.height,
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              content,
-                              Center(
-                                child: AnimatedOpacity(
-                                  opacity: _showOverlayIconVisible ? 1.0 : 0.0,
-                                  duration: const Duration(milliseconds: 200),
-                                  child: Container(
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: const BoxDecoration(color: Colors.black45, shape: BoxShape.circle),
-                                    child: Icon(_overlayIcon, size: 50, color: Colors.white),
-                                  ),
-                                ),
-                              ),
-                              if (widget.isFullScreen)
-                                Positioned(
-                                  top: 40,
-                                  right: 20,
-                                  child: AnimatedOpacity(
-                                    opacity: _controlsVisible ? 1.0 : 0.0,
-                                    duration: const Duration(milliseconds: 300),
-                                    child: IgnorePointer(
-                                      ignoring: !_controlsVisible,
-                                      child: IconButton(
-                                        icon: const Icon(Icons.close, color: Colors.white, size: 30),
-                                        onPressed: () => Navigator.of(context).pop(),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              Positioned(
-                                bottom: 0,
-                                left: 0,
-                                right: 0,
-                                child: AnimatedOpacity(
-                                  opacity: _controlsVisible ? 1.0 : 0.0,
-                                  duration: const Duration(milliseconds: 300),
-                                  child: IgnorePointer(
-                                    ignoring: !_controlsVisible,
-                                    child: _buildVideoControls(),
-                                  ),
-                                ),
-                              ),
-                            ],
+                  child: SizedBox(
+                    width: widget.width,
+                    height: widget.height,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        content,
+                        Center(
+                          child: AnimatedOpacity(
+                            opacity: _showOverlayIconVisible ? 1.0 : 0.0,
+                            duration: const Duration(milliseconds: 200),
+                            child: Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: const BoxDecoration(color: Colors.black45, shape: BoxShape.circle),
+                              child: Icon(_overlayIcon, size: 50, color: Colors.white),
+                            ),
                           ),
                         ),
-                      );
-                    },
+                        if (widget.isFullScreen)
+                          Positioned(
+                            top: 40,
+                            right: 20,
+                            child: AnimatedOpacity(
+                              opacity: _controlsVisible ? 1.0 : 0.0,
+                              duration: const Duration(milliseconds: 300),
+                              child: IgnorePointer(
+                                ignoring: !_controlsVisible,
+                                child: IconButton(
+                                  icon: const Icon(Icons.close, color: Colors.white, size: 30),
+                                  onPressed: () => Navigator.of(context).pop(),
+                                ),
+                              ),
+                            ),
+                          ),
+                        Positioned(
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          child: AnimatedOpacity(
+                            opacity: _controlsVisible ? 1.0 : 0.0,
+                            duration: const Duration(milliseconds: 300),
+                            child: IgnorePointer(
+                              ignoring: !_controlsVisible,
+                              child: _buildVideoControls(),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 );
               },
             ),
+          );
+        },
+      ),
     );
   }
 
   Widget _buildVideoControls() {
     final currentDuration = widget.duration * _controller.value;
-    
+
     // Calculate contiguous buffer progress from current position
     final int total = widget.imagePaths.length;
     double bufferProgress = 0.0;
@@ -604,61 +603,61 @@ class _PngSeriesAnimatorState extends State<PngSeriesAnimator>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-            SliderTheme(
-              data: SliderTheme.of(context).copyWith(
-                trackHeight: 2.0,
-                trackShape: BufferSliderTrackShape(
-                  bufferProgress: bufferProgress,
-                  bufferColor: (widget.activeColor ?? Colors.redAccent).withValues(alpha: 0.3),
-                ),
-                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6.0),
-                overlayShape: const RoundSliderOverlayShape(overlayRadius: 14.0),
-                activeTrackColor: widget.activeColor ?? Colors.redAccent,
-                inactiveTrackColor: (widget.inactiveColor ?? Colors.white).withValues(alpha: 0.1),
-                thumbColor: widget.thumbColor ?? widget.activeColor ?? Colors.redAccent,
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              trackHeight: 2.0,
+              trackShape: BufferSliderTrackShape(
+                bufferProgress: bufferProgress,
+                bufferColor: (widget.activeColor ?? Colors.redAccent).withValues(alpha: 0.3),
               ),
-              child: Slider(
-                value: _controller.value,
-                onChangeStart: (_) {
-                  _wasPlayingBeforeDrag = _isPlaying;
-                  _isPlaying = false;
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6.0),
+              overlayShape: const RoundSliderOverlayShape(overlayRadius: 14.0),
+              activeTrackColor: widget.activeColor ?? Colors.redAccent,
+              inactiveTrackColor: (widget.inactiveColor ?? Colors.white).withValues(alpha: 0.1),
+              thumbColor: widget.thumbColor ?? widget.activeColor ?? Colors.redAccent,
+            ),
+            child: Slider(
+              value: _controller.value,
+              onChangeStart: (_) {
+                _wasPlayingBeforeDrag = _isPlaying;
+                _isPlaying = false;
+                _updateAnimationState();
+                _hideTimer?.cancel();
+              },
+              onChangeEnd: (_) {
+                if (_wasPlayingBeforeDrag) {
+                  _isPlaying = true;
                   _updateAnimationState();
-                  _hideTimer?.cancel();
-                },
-                onChangeEnd: (_) {
-                  if (_wasPlayingBeforeDrag) {
-                    _isPlaying = true;
-                    _updateAnimationState();
-                  }
-                  _startHideTimer();
-                },
-                onChanged: (val) {
-                  setState(() {
-                    _controller.value = val;
-                  });
-                },
+                }
+                _startHideTimer();
+              },
+              onChanged: (val) {
+                setState(() {
+                  _controller.value = val;
+                });
+              },
+            ),
+          ),
+          Row(
+            children: [
+              IconButton(
+                icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow, color: Colors.white),
+                onPressed: _togglePlayPause,
               ),
-            ),
-            Row(
-              children: [
-                IconButton(
-                  icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow, color: Colors.white),
-                  onPressed: _togglePlayPause,
-                ),
-                Text(
-                  '${_formatDuration(currentDuration)} / ${_formatDuration(widget.duration)}',
-                  style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                ),
-                const Spacer(),
-                IconButton(
-                  icon: Icon(widget.isFullScreen ? Icons.fullscreen_exit : Icons.fullscreen, color: Colors.white),
-                  onPressed: _toggleFullScreen,
-                ),
-              ],
-            ),
-          ],
-        ),
-      );
+              Text(
+                '${_formatDuration(currentDuration)} / ${_formatDuration(widget.duration)}',
+                style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+              const Spacer(),
+              IconButton(
+                icon: Icon(widget.isFullScreen ? Icons.fullscreen_exit : Icons.fullscreen, color: Colors.white),
+                onPressed: _toggleFullScreen,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildImage(String path) {
@@ -704,18 +703,18 @@ class BufferSliderTrackShape extends RoundedRectSliderTrackShape {
 
   @override
   void paint(
-    PaintingContext context,
-    Offset offset, {
-    required RenderBox parentBox,
-    required SliderThemeData sliderTheme,
-    required Animation<double> enableAnimation,
-    required TextDirection textDirection,
-    required Offset thumbCenter,
-    Offset? secondaryOffset,
-    bool isDiscrete = false,
-    bool isEnabled = false,
-    double additionalActiveTrackHeight = 2,
-  }) {
+      PaintingContext context,
+      Offset offset, {
+        required RenderBox parentBox,
+        required SliderThemeData sliderTheme,
+        required Animation<double> enableAnimation,
+        required TextDirection textDirection,
+        required Offset thumbCenter,
+        Offset? secondaryOffset,
+        bool isDiscrete = false,
+        bool isEnabled = false,
+        double additionalActiveTrackHeight = 2,
+      }) {
     // 1. Paint the standard inactive and active track
     super.paint(
       context,
