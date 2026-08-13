@@ -1,7 +1,8 @@
 name: png_series_animator
-description: "A customizable Flutter widget that animates a series of PNG images as a high-performance frame-by-frame animation with support for custom transitions."
-version: 0.0.1
+description: "A premium Flutter widget to animate PNG sequences with high performance, pre-caching, and customizable transition builders between frames."
+version: 1.0.0
 repository: https://github.com/amirr-dotcom/png_series_animator
+homepage: https://github.com/amirr-dotcom/png_series_animator
 
 environment:
   sdk: ^3.12.2
