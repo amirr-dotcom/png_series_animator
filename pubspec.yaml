@@ -4,6 +4,13 @@ version: 1.0.0
 repository: https://github.com/amirr-dotcom/png_series_animator
 homepage: https://github.com/amirr-dotcom/png_series_animator
 
+topics:
+  - animation
+  - png-sequence
+  - flipbook
+  - image-animation
+  - performance
+
 environment:
   sdk: ^3.12.2
   flutter: ">=1.17.0"
