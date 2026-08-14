@@ -1,3 +1,13 @@
+## 1.2.0
+
+* Introduced `PngSubtitleController` for multi-language subtitles and captions.
+* Added support for word-level highlighting within subtitles.
+* Added `subtitleBuilder` for custom subtitle rendering.
+* Enhanced `PngSeriesController` for better external synchronization.
+* Improved full-screen implementation using a persistent `OverlayEntry`.
+* Added `onPlayStateChanged` and `onSeek` callbacks for easier integration with audio players.
+* Internal optimizations for frame loading and buffering states.
+
 ## 1.1.0
 
 * Introduced `PngSeriesController` for programmatic control over playback, pausing, and seeking.

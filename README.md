@@ -17,11 +17,12 @@ Below is a conceptual layout of the programmatically generated bouncing energy o
 ## Features
 
 - ⚡ **High Performance Caching**: Automatically pre-caches and registers all image providers to prevent flickering during playback.
+- 💬 **Subtitles & Captions**: Full support for multi-language subtitles with word-level highlighting and custom builders.
 - 🎮 **Programmatic Control**: New `PngSeriesController` to play, pause, and seek from anywhere in your code.
 - 🔄 **Looping Controls**: Easily toggle between single playback (`repeat: false`) and infinite looping (`repeat: true`).
 - 🛠️ **Custom Transitions**: Build complex inter-frame transitions (e.g. crossfading, sliding, rotating, zooming) using the dynamic `PngSeriesTransitionBuilder`.
 - 📊 **Flexible Sizing**: Define layout dimensions using `width`, `height`, and `fit` (supports all standard `BoxFit` types).
-- 🔔 **Callbacks**: Listen to play state changes, seek events, and completion hooks.
+- 🔔 **Callbacks**: Listen to play state changes, seek events, and completion hooks for perfect audio-visual sync.
 - 🎯 **Gapless Playback**: Employs Flutter's gapless playback configuration to prevent frame flashes.
 
 ---
@@ -32,7 +33,7 @@ Add the package dependency to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  png_series_animator: ^1.1.0
+  png_series_animator: ^1.2.0
 ```
 
 Define your animation assets folder in your project's `pubspec.yaml`:
@@ -100,6 +101,40 @@ PngSeriesAnimator(
   controller: myController,
   onPlayStateChanged: (isPlaying) => print('Playing: $isPlaying'),
   onSeek: (progress) => print('Seeked to: $progress'),
+)
+```
+
+### Subtitles & Word-Level Highlighting
+
+`PngSeriesAnimator` now supports complex subtitle metadata, including multi-language support and word-level timing for karaoke-style highlighting.
+
+```dart
+final subtitleController = PngSubtitleController(
+  data: {
+    'en': [
+      SubtitleSegment(
+        start: 0.0,
+        end: 2.0,
+        text: 'Hello world',
+        words: [
+          SubtitleWord(start: 0.0, end: 1.0, text: 'Hello'),
+          SubtitleWord(start: 1.0, end: 2.0, text: 'world'),
+        ],
+      ),
+    ],
+  },
+  initialLanguage: 'en',
+);
+
+PngSeriesAnimator(
+  imagePaths: myImagePaths,
+  subtitleController: subtitleController,
+  // Optional: Custom subtitle builder
+  subtitleBuilder: (context, segment, currentTime) {
+    return Center(
+      child: Text(segment?.text ?? ''),
+    );
+  },
 )
 ```
 

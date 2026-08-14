@@ -38,6 +38,16 @@ class HomeScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             _MenuButton(
+              title: 'Subtitles & Highlighting',
+              subtitle: 'Multi-language synced captions',
+              icon: Icons.closed_caption,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SubtitleDemo()),
+              ),
+            ),
+            const SizedBox(height: 20),
+            _MenuButton(
               title: 'Controller Demo',
               subtitle: 'Programmatic play/pause/seek',
               icon: Icons.settings_remote,
@@ -123,64 +133,96 @@ class _MenuButton extends StatelessWidget {
   }
 }
 
-class LocalAssetDemo extends StatelessWidget {
-  const LocalAssetDemo({super.key});
+class SubtitleDemo extends StatefulWidget {
+  const SubtitleDemo({super.key});
+
+  @override
+  State<SubtitleDemo> createState() => _SubtitleDemoState();
+}
+
+class _SubtitleDemoState extends State<SubtitleDemo> {
+  late final PngSubtitleController _subtitleController;
+
+  @override
+  void initState() {
+    super.initState();
+    _subtitleController = PngSubtitleController(
+      data: {
+        'en': [
+          SubtitleSegment(
+            start: 0.0,
+            end: 1.0,
+            text: 'Welcome to PNG Series Animator',
+            words: [
+              SubtitleWord(start: 0.0, end: 0.3, text: 'Welcome'),
+              SubtitleWord(start: 0.3, end: 0.5, text: 'to'),
+              SubtitleWord(start: 0.5, end: 0.7, text: 'PNG'),
+              SubtitleWord(start: 0.7, end: 0.8, text: 'Series'),
+              SubtitleWord(start: 0.8, end: 1.0, text: 'Animator'),
+            ],
+          ),
+          SubtitleSegment(
+            start: 1.0,
+            end: 2.0,
+            text: 'Experience high performance animations',
+            words: [
+              SubtitleWord(start: 1.0, end: 1.3, text: 'Experience'),
+              SubtitleWord(start: 1.3, end: 1.5, text: 'high'),
+              SubtitleWord(start: 1.5, end: 1.7, text: 'performance'),
+              SubtitleWord(start: 1.7, end: 2.0, text: 'animations'),
+            ],
+          ),
+        ],
+        'es': [
+          SubtitleSegment(
+            start: 0.0,
+            end: 1.0,
+            text: 'Bienvenido al Animador de Series PNG',
+            words: [
+              SubtitleWord(start: 0.0, end: 0.5, text: 'Bienvenido'),
+              SubtitleWord(start: 0.5, end: 0.7, text: 'al'),
+              SubtitleWord(start: 0.7, end: 1.0, text: 'Animador'),
+            ],
+          ),
+          SubtitleSegment(
+            start: 1.0,
+            end: 2.0,
+            text: 'Experimente animaciones de alto rendimiento',
+            words: [
+              SubtitleWord(start: 1.0, end: 1.5, text: 'Experimente'),
+              SubtitleWord(start: 1.5, end: 2.0, text: 'animaciones'),
+            ],
+          ),
+        ],
+      },
+      initialLanguage: 'en',
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final List<String> images = List.generate(
       18,
-          (index) => 'assets/1/${10001 + index}.png',
+      (index) => 'assets/1/${10001 + index}.png',
     );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Local Assets')),
+      appBar: AppBar(
+        title: const Text('Subtitles Demo'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.language),
+            onPressed: () => _subtitleController.cycleLanguage(),
+          ),
+        ],
+      ),
       body: Center(
         child: PngSeriesAnimator.videoPlayer(
           imagePaths: images,
           duration: const Duration(seconds: 2),
-          heroTag: 'local_hero',
+          subtitleController: _subtitleController,
           fit: BoxFit.contain,
         ),
-      ),
-    );
-  }
-}
-
-class NetworkAssetDemo extends StatelessWidget {
-  const NetworkAssetDemo({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    // Using a more reliable set of placeholder images for the demo
-    final List<String> networkImages = List.generate(
-      30,
-          (index) => 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${index + 71}.png',
-    );
-
-    return Scaffold(
-      appBar: AppBar(title: const Text('Network Assets')),
-      body: Column(
-        children: [
-          const Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Text(
-              'Fetching and caching network sequence...',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey),
-            ),
-          ),
-          Expanded(
-            child: Center(
-              child: PngSeriesAnimator.videoPlayer(
-                imagePaths: networkImages,
-                duration: const Duration(seconds: 10),
-                heroTag: 'network_hero',
-                fit: BoxFit.contain,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -290,6 +332,69 @@ class _ControllerDemoState extends State<ControllerDemo> {
                   ],
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class LocalAssetDemo extends StatelessWidget {
+  const LocalAssetDemo({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final List<String> images = List.generate(
+      18,
+      (index) => 'assets/1/${10001 + index}.png',
+    );
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Local Assets')),
+      body: Center(
+        child: PngSeriesAnimator.videoPlayer(
+          imagePaths: images,
+          duration: const Duration(seconds: 2),
+          heroTag: 'local_hero',
+          fit: BoxFit.contain,
+        ),
+      ),
+    );
+  }
+}
+
+class NetworkAssetDemo extends StatelessWidget {
+  const NetworkAssetDemo({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    // Using a more reliable set of placeholder images for the demo
+    final List<String> networkImages = List.generate(
+      30,
+      (index) => 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${index + 71}.png',
+    );
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Network Assets')),
+      body: Column(
+        children: [
+          const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Text(
+              'Fetching and caching network sequence...',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey),
+            ),
+          ),
+          Expanded(
+            child: Center(
+              child: PngSeriesAnimator.videoPlayer(
+                imagePaths: networkImages,
+                duration: const Duration(seconds: 10),
+                heroTag: 'network_hero',
+                fit: BoxFit.contain,
+              ),
             ),
           ),
         ],

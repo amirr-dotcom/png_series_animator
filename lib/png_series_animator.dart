@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'utils/image_cache_manager.dart';
+import 'package:path/path.dart' as p;
+import '../utils/image_cache_manager.dart';
 
 typedef PngSeriesTransitionBuilder = Widget Function(
     BuildContext context,
@@ -10,13 +12,18 @@ typedef PngSeriesTransitionBuilder = Widget Function(
     double progress,
     );
 
+typedef PngSubtitleBuilder = Widget Function(
+    BuildContext context,
+    SubtitleSegment? segment,
+    double currentTimeInSeconds,
+    );
+
 class PngSeriesController extends ChangeNotifier {
   AnimationController? _animationController;
   bool _isPlaying = false;
 
-  void _attach(AnimationController controller, bool isPlaying) {
+  void _attach(AnimationController controller) {
     _animationController = controller;
-    _isPlaying = isPlaying;
     _animationController!.addListener(_onControllerTick);
   }
 
@@ -65,6 +72,157 @@ class PngSeriesController extends ChangeNotifier {
   }
 }
 
+class SubtitleSegment {
+  final double start;
+  final double end;
+  final String text;
+  final List<SubtitleWord> words;
+
+  SubtitleSegment({
+    required this.start,
+    required this.end,
+    required this.text,
+    required this.words,
+  });
+
+  factory SubtitleSegment.fromJson(Map<String, dynamic> json) {
+    return SubtitleSegment(
+      start: (json['start'] as num).toDouble(),
+      end: (json['end'] as num).toDouble(),
+      text: json['text'] as String,
+      words: (json['words'] as List<dynamic>?)
+          ?.map((w) => SubtitleWord.fromJson(w))
+          .toList() ??
+          [],
+    );
+  }
+}
+
+class SubtitleWord {
+  final double start;
+  final double end;
+  final String text;
+
+  SubtitleWord({
+    required this.start,
+    required this.end,
+    required this.text,
+  });
+
+  factory SubtitleWord.fromJson(Map<String, dynamic> json) {
+    return SubtitleWord(
+      start: (json['start'] as num).toDouble(),
+      end: (json['end'] as num).toDouble(),
+      text: json['text'] as String,
+    );
+  }
+}
+
+class PngSubtitleController extends ChangeNotifier {
+  Map<String, List<SubtitleSegment>> _data = {};
+  String? _currentLanguage;
+  bool _isVisible = true;
+  TextStyle? _style;
+  TextStyle? _highlightStyle;
+
+  PngSubtitleController({
+    Map<String, dynamic>? data,
+    String? initialLanguage,
+    bool isVisible = true,
+    TextStyle? style,
+    TextStyle? highlightStyle,
+  })  : _isVisible = isVisible,
+        _style = style,
+        _highlightStyle = highlightStyle {
+    if (data != null) {
+      updateData(data, initialLanguage: initialLanguage);
+    }
+  }
+
+  /// Updates the underlying subtitle data and optionally changes the language
+  void updateData(Map<String, dynamic> rawData, {String? initialLanguage}) {
+    _data = rawData.map((key, value) {
+      return MapEntry(
+        key,
+        (value as List).map((s) => SubtitleSegment.fromJson(s as Map<String, dynamic>)).toList(),
+      );
+    });
+    if (initialLanguage != null || _currentLanguage == null) {
+      _currentLanguage = initialLanguage ?? _data.keys.firstOrNull;
+    }
+    notifyListeners();
+  }
+
+  /// Changes the current subtitle language
+  set language(String? lang) {
+    if (_data.containsKey(lang)) {
+      _currentLanguage = lang;
+      notifyListeners();
+    }
+  }
+
+  String? get language => _currentLanguage;
+
+  /// Toggles subtitle visibility
+  set isVisible(bool visible) {
+    _isVisible = visible;
+    notifyListeners();
+  }
+
+  bool get isVisible => _isVisible;
+
+  /// Updates the base text style
+  set style(TextStyle? newStyle) {
+    _style = newStyle;
+    notifyListeners();
+  }
+
+  TextStyle? get style => _style;
+
+  /// Updates the highlighting text style
+  set highlightStyle(TextStyle? newStyle) {
+    _highlightStyle = newStyle;
+    notifyListeners();
+  }
+
+  TextStyle? get highlightStyle => _highlightStyle;
+
+  /// Returns segments for the current language
+  List<SubtitleSegment> get currentSegments => _data[_currentLanguage] ?? [];
+
+  /// Returns all available languages in the data
+  List<String> get availableLanguages => _data.keys.toList();
+
+  /// Cycles through available languages
+  void cycleLanguage() {
+    if (_data.isEmpty) return;
+    final languages = availableLanguages;
+    final currentIndex = languages.indexOf(_currentLanguage ?? '');
+    if (currentIndex == -1 || currentIndex == languages.length - 1) {
+      _currentLanguage = languages.first;
+    } else {
+      _currentLanguage = languages[currentIndex + 1];
+    }
+    notifyListeners();
+  }
+
+  /// Toggles subtitle visibility
+  void toggleVisibility() {
+    _isVisible = !_isVisible;
+    notifyListeners();
+  }
+
+  /// Gets the active segment for a specific time
+  SubtitleSegment? getSegmentAt(double timeInSeconds) {
+    if (!_isVisible) return null;
+    final segments = currentSegments;
+    for (final s in segments) {
+      if (timeInSeconds >= s.start && timeInSeconds <= s.end) return s;
+    }
+    return null;
+  }
+}
+
 class PngSeriesAnimator extends StatefulWidget {
   final List<String> imagePaths;
   final Duration duration;
@@ -88,6 +246,10 @@ class PngSeriesAnimator extends StatefulWidget {
   final Color? inactiveColor;
   final Color? thumbColor;
 
+  // Subtitle property (Single variable control)
+  final PngSubtitleController? subtitleController;
+  final PngSubtitleBuilder? subtitleBuilder;
+
   const PngSeriesAnimator({
     super.key,
     required this.imagePaths,
@@ -109,6 +271,8 @@ class PngSeriesAnimator extends StatefulWidget {
     this.activeColor,
     this.inactiveColor,
     this.thumbColor,
+    this.subtitleController,
+    this.subtitleBuilder,
   }) : assert(imagePaths.length > 0, 'imagePaths cannot be empty');
 
   const PngSeriesAnimator.videoPlayer({
@@ -131,6 +295,8 @@ class PngSeriesAnimator extends StatefulWidget {
     this.activeColor,
     this.inactiveColor,
     this.thumbColor,
+    this.subtitleController,
+    this.subtitleBuilder,
   })  : showControls = true,
         assert(imagePaths.length > 0, 'imagePaths cannot be empty');
 
@@ -164,14 +330,31 @@ class _PngSeriesAnimatorState extends State<PngSeriesAnimator>
   @override
   void initState() {
     super.initState();
-    _isPlaying = widget.isPlaying;
+
+    widget.subtitleController?.addListener(_onSubtitleControllerChanged);
+
     _controller = AnimationController(
       vsync: this,
       duration: widget.duration,
       value: widget.initialValue,
     );
 
-    widget.controller?._attach(_controller, _isPlaying);
+    // If a controller is provided, it becomes the source of truth for the initial play state
+    if (widget.controller != null) {
+      _isPlaying = widget.controller!.isPlaying;
+      widget.controller?._attach(_controller);
+      widget.controller?.addListener(_onControllerChanged);
+
+      // If we are starting in play mode, notify the parent (Phase 4)
+      // so it can start the synced audio.
+      if (_isPlaying && widget.onPlayStateChanged != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) widget.onPlayStateChanged!(true);
+        });
+      }
+    } else {
+      _isPlaying = widget.isPlaying;
+    }
 
     _controller.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
@@ -191,6 +374,27 @@ class _PngSeriesAnimatorState extends State<PngSeriesAnimator>
 
     if (widget.showControls) {
       _startHideTimer();
+    }
+  }
+
+  void _onControllerChanged() {
+    if (widget.controller != null && widget.controller!.isPlaying != _isPlaying) {
+      setState(() {
+        _isPlaying = widget.controller!.isPlaying;
+        _updateAnimationState();
+      });
+      _fullScreenEntry?.markNeedsBuild();
+
+      // Notify the parent (Phase 4) to play/pause the audio
+      if (widget.onPlayStateChanged != null) {
+        widget.onPlayStateChanged!(_isPlaying);
+      }
+    }
+  }
+
+  void _onSubtitleControllerChanged() {
+    if (mounted) {
+      setState(() {});
     }
   }
 
@@ -268,7 +472,11 @@ class _PngSeriesAnimatorState extends State<PngSeriesAnimator>
         } else {
           provider = NetworkImage(path);
         }
+      } else if (p.isAbsolute(path)) {
+        // Absolute file path from a downloaded bundle
+        provider = FileImage(File(path));
       } else {
+        // Bundled asset
         provider = AssetImage(path);
       }
 
@@ -343,6 +551,10 @@ class _PngSeriesAnimatorState extends State<PngSeriesAnimator>
       _loadedIndices.clear();
       _precached = false;
       _precacheImages();
+    }
+    if (oldWidget.subtitleController != widget.subtitleController) {
+      oldWidget.subtitleController?.removeListener(_onSubtitleControllerChanged);
+      widget.subtitleController?.addListener(_onSubtitleControllerChanged);
     }
   }
 
@@ -480,7 +692,9 @@ class _PngSeriesAnimatorState extends State<PngSeriesAnimator>
     _overlayTimer?.cancel();
     _fullScreenEntry?.remove();
     _fullScreenEntry = null;
+    widget.controller?.removeListener(_onControllerChanged);
     widget.controller?._detach();
+    widget.subtitleController?.removeListener(_onSubtitleControllerChanged);
     _controller.dispose();
     super.dispose();
   }
@@ -576,7 +790,23 @@ class _PngSeriesAnimatorState extends State<PngSeriesAnimator>
           }
 
           if (!widget.showControls) {
-            return SizedBox(width: widget.width, height: widget.height, child: content);
+            return SizedBox(
+              width: widget.width,
+              height: widget.height,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  content,
+                  if (widget.subtitleController?.isVisible == true)
+                    Positioned(
+                      bottom: 40,
+                      left: 20,
+                      right: 20,
+                      child: _buildSubtitles(),
+                    ),
+                ],
+              ),
+            );
           }
 
           return MouseRegion(
@@ -609,6 +839,13 @@ class _PngSeriesAnimatorState extends State<PngSeriesAnimator>
                       fit: StackFit.expand,
                       children: [
                         content,
+                        if (widget.subtitleController?.isVisible == true)
+                          Positioned(
+                            bottom: widget.showControls && _controlsVisible ? 100 : 40,
+                            left: 20,
+                            right: 20,
+                            child: _buildSubtitles(),
+                          ),
                         Center(
                           child: AnimatedOpacity(
                             opacity: _showOverlayIconVisible ? 1.0 : 0.0,
@@ -620,22 +857,72 @@ class _PngSeriesAnimatorState extends State<PngSeriesAnimator>
                             ),
                           ),
                         ),
-                        if (isFullScreen)
-                          Positioned(
-                            top: 40,
-                            right: 20,
-                            child: AnimatedOpacity(
-                              opacity: _controlsVisible ? 1.0 : 0.0,
-                              duration: const Duration(milliseconds: 300),
-                              child: IgnorePointer(
-                                ignoring: !_controlsVisible,
-                                child: IconButton(
-                                  icon: const Icon(Icons.close, color: Colors.white, size: 30),
-                                  onPressed: _exitFullScreen,
-                                ),
+                        Positioned(
+                          top: isFullScreen ? 40 : 10,
+                          right: 20,
+                          child: AnimatedOpacity(
+                            opacity: _controlsVisible ? 1.0 : 0.0,
+                            duration: const Duration(milliseconds: 300),
+                            child: IgnorePointer(
+                              ignoring: !_controlsVisible,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (widget.subtitleController != null) ...[
+                                    // 1. Subtitle Visibility Toggle
+                                    IconButton(
+                                      tooltip: 'Toggle Subtitles',
+                                      icon: Icon(
+                                        widget.subtitleController!.isVisible
+                                            ? Icons.subtitles
+                                            : Icons.subtitles_off,
+                                        color: Colors.white,
+                                      ),
+                                      onPressed: () {
+                                        setState(() {
+                                          widget.subtitleController!.toggleVisibility();
+                                        });
+                                      },
+                                    ),
+                                    // 2. Language Cycle Button
+                                    if (widget.subtitleController!.isVisible &&
+                                        widget.subtitleController!.availableLanguages.length > 1)
+                                      if (widget.subtitleController!.language != null)
+                                        GestureDetector(
+                                          onTap: () {
+                                            setState(() {
+                                              widget.subtitleController!.cycleLanguage();
+                                            });
+                                          },
+                                          child: Container(
+                                            margin: const EdgeInsets.only(left: 4),
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.6),
+                                            decoration: BoxDecoration(
+                                              color: Colors.black45,
+                                              borderRadius: BorderRadius.circular(4),
+                                              border: Border.all(color: Colors.white24),
+                                            ),
+                                            child: Text(
+                                              widget.subtitleController!.language!.toUpperCase(),
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                  ],
+                                  if (isFullScreen)
+                                    IconButton(
+                                      icon: const Icon(Icons.close, color: Colors.white, size: 30),
+                                      onPressed: _exitFullScreen,
+                                    ),
+                                ],
                               ),
                             ),
                           ),
+                        ),
                         Positioned(
                           bottom: 0,
                           left: 0,
@@ -657,6 +944,44 @@ class _PngSeriesAnimatorState extends State<PngSeriesAnimator>
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildSubtitles() {
+    final controller = widget.subtitleController;
+    if (controller == null || !controller.isVisible) return const SizedBox.shrink();
+
+    final Duration effectiveDuration = _controller.duration ?? widget.duration;
+    final double currentTimeInSeconds = _controller.value * effectiveDuration.inSeconds;
+
+    final segment = controller.getSegmentAt(currentTimeInSeconds);
+
+    if (widget.subtitleBuilder != null) {
+      return widget.subtitleBuilder!(context, segment, currentTimeInSeconds);
+    }
+
+    if (segment == null) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.black54,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: RichText(
+        textAlign: TextAlign.center,
+        text: TextSpan(
+          children: segment.words.map((word) {
+            final bool isHighlighted = currentTimeInSeconds >= word.start && currentTimeInSeconds <= word.end;
+            return TextSpan(
+              text: "${word.text} ",
+              style: isHighlighted
+                  ? (controller.highlightStyle ?? const TextStyle(color: Colors.yellow, fontWeight: FontWeight.bold, fontSize: 18))
+                  : (controller.style ?? const TextStyle(color: Colors.white, fontSize: 18)),
+            );
+          }).toList(),
+        ),
       ),
     );
   }
@@ -849,3 +1174,5 @@ class BufferSliderTrackShape extends RoundedRectSliderTrackShape {
     );
   }
 }
+
+
