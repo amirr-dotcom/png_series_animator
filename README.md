@@ -17,10 +17,11 @@ Below is a conceptual layout of the programmatically generated bouncing energy o
 ## Features
 
 - ⚡ **High Performance Caching**: Automatically pre-caches and registers all image providers to prevent flickering during playback.
+- 🎮 **Programmatic Control**: New `PngSeriesController` to play, pause, and seek from anywhere in your code.
 - 🔄 **Looping Controls**: Easily toggle between single playback (`repeat: false`) and infinite looping (`repeat: true`).
 - 🛠️ **Custom Transitions**: Build complex inter-frame transitions (e.g. crossfading, sliding, rotating, zooming) using the dynamic `PngSeriesTransitionBuilder`.
 - 📊 **Flexible Sizing**: Define layout dimensions using `width`, `height`, and `fit` (supports all standard `BoxFit` types).
-- 🔔 **Completion Hook**: Trigger events when non-repeating animations reach their final frame.
+- 🔔 **Callbacks**: Listen to play state changes, seek events, and completion hooks.
 - 🎯 **Gapless Playback**: Employs Flutter's gapless playback configuration to prevent frame flashes.
 
 ---
@@ -31,7 +32,7 @@ Add the package dependency to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  png_series_animator: ^1.0.1
+  png_series_animator: ^1.1.0
 ```
 
 Define your animation assets folder in your project's `pubspec.yaml`:
@@ -80,6 +81,26 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+```
+
+### Programmatic Control
+
+You can now use `PngSeriesController` to control the animation externally:
+
+```dart
+final myController = PngSeriesController();
+
+// Later in your code...
+myController.play();
+myController.pause();
+myController.seekTo(0.5); // Seek to 50% progress
+
+PngSeriesAnimator(
+  imagePaths: myImagePaths,
+  controller: myController,
+  onPlayStateChanged: (isPlaying) => print('Playing: $isPlaying'),
+  onSeek: (progress) => print('Seeked to: $progress'),
+)
 ```
 
 ### Adding Custom Transitions

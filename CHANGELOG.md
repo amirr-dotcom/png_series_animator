@@ -1,3 +1,11 @@
+## 1.1.0
+
+* Introduced `PngSeriesController` for programmatic control over playback, pausing, and seeking.
+* Added `onPlayStateChanged` and `onSeek` callbacks to `PngSeriesAnimator`.
+* Improved full-screen implementation using `OverlayEntry` for a more seamless transition.
+* Enhanced orientation handling in full-screen mode (auto-landscape for wide sequences).
+* Optimized frame loading and buffering state management.
+
 ## 1.0.1
 
 * Improved full-screen orientation exit logic to reliably restore portrait mode and system UI.
