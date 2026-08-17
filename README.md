@@ -34,7 +34,7 @@ Add the package dependency to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  png_series_animator: ^1.3.0
+  png_series_animator: ^1.4.0
 ```
 
 Define your animation assets folder in your project's `pubspec.yaml`:

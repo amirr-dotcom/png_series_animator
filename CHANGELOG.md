@@ -1,3 +1,19 @@
+## 1.4.0
+
+* **Audio Engine Migration**: Switched from `audioplayers` to `just_audio` and `audio_session` for superior cross-platform audio-visual synchronization and lower latency.
+* **Performance Optimization**:
+    *   Replaced full-widget rebuilds with `ValueNotifier<int>` and `ValueListenableBuilder` for frame updates, drastically reducing CPU usage during playback.
+    *   Simplified image building logic to minimize overhead.
+    *   Set `imageCache.maximumSizeBytes` to 100MB to improve stability on memory-constrained devices.
+* **Advanced Synchronization**:
+    *   Implemented drift detection logic that automatically re-syncs animation frames to the audio position if they diverge by more than 100ms.
+    *   Introduced `PngPlaybackState` enum (Playing, Paused, Buffering, Seeking) for more granular state management.
+* **Controller Enhancements**:
+    *   Improved `PngSeriesController` with explicit `onPlay`, `onPause`, and `onSeek` hooks for robust external synchronization.
+* **Branding & Cleanup**:
+    *   Updated project bundle identifiers to `com.ctamir`.
+    *   Removed legacy CocoaPods integration in favor of modern Swift Package Manager support in the iOS project.
+
 ## 1.3.0
 
 * Introduced built-in synchronized audio support via the `audioPath` property.
