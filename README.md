@@ -17,7 +17,8 @@ Below is a conceptual layout of the programmatically generated bouncing energy o
 ## Features
 
 - ⚡ **High Performance Caching**: Automatically pre-caches and registers all image providers to prevent flickering during playback.
-- 💬 **Subtitles & Captions**: Full support for multi-language subtitles with word-level highlighting and custom builders.
+- 🎵 **Built-in Audio Sync**: Simply provide an `audioPath` to synchronize your animation with an audio file automatically.
+- 💬 **Subtitles & RTL Support**: Multi-language subtitles with word-level highlighting and full RTL support for languages like Arabic or Hebrew.
 - 🎮 **Programmatic Control**: New `PngSeriesController` to play, pause, and seek from anywhere in your code.
 - 🔄 **Looping Controls**: Easily toggle between single playback (`repeat: false`) and infinite looping (`repeat: true`).
 - 🛠️ **Custom Transitions**: Build complex inter-frame transitions (e.g. crossfading, sliding, rotating, zooming) using the dynamic `PngSeriesTransitionBuilder`.
@@ -33,7 +34,7 @@ Add the package dependency to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  png_series_animator: ^1.2.0
+  png_series_animator: ^1.3.0
 ```
 
 Define your animation assets folder in your project's `pubspec.yaml`:
@@ -104,6 +105,18 @@ PngSeriesAnimator(
 )
 ```
 
+### Audio Synchronization
+
+You can now pass an `audioPath` (Asset or Network) to automatically synchronize the animation with audio playback. The animator will automatically adjust its duration to match the audio.
+
+```dart
+PngSeriesAnimator(
+  imagePaths: myImagePaths,
+  audioPath: 'assets/audio/voiceover.mp3', // Or a URL
+  showControls: true,
+)
+```
+
 ### Subtitles & Word-Level Highlighting
 
 `PngSeriesAnimator` now supports complex subtitle metadata, including multi-language support and word-level timing for karaoke-style highlighting.
@@ -136,6 +149,40 @@ PngSeriesAnimator(
     );
   },
 )
+```
+
+#### JSON Subtitle Format
+
+You can also load subtitles from a JSON file or API response. The structure should be a Map of languages containing lists of segments with word-level timing:
+
+```json
+{
+  "en": [
+    {
+      "start": 0.0,
+      "end": 2.5,
+      "text": "The quick brown fox",
+      "words": [
+        {"start": 0.0, "end": 0.5, "text": "The"},
+        {"start": 0.5, "end": 1.0, "text": "quick"},
+        {"start": 1.0, "end": 1.5, "text": "brown"},
+        {"start": 1.5, "end": 2.5, "text": "fox"}
+      ]
+    }
+  ],
+  "ar": [
+    {
+      "start": 0.0,
+      "end": 2.5,
+      "text": "الثعلب البني السريع",
+      "words": [
+        {"start": 0.0, "end": 0.8, "text": "الثعلب"},
+        {"start": 0.8, "end": 1.5, "text": "البني"},
+        {"start": 1.5, "end": 2.5, "text": "السريع"}
+      ]
+    }
+  ]
+}
 ```
 
 ### Adding Custom Transitions

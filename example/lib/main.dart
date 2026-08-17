@@ -38,6 +38,16 @@ class HomeScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             _MenuButton(
+              title: 'Audio Synchronization',
+              subtitle: 'Animation synced with music/voice',
+              icon: Icons.audiotrack,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AudioSyncDemo()),
+              ),
+            ),
+            const SizedBox(height: 20),
+            _MenuButton(
               title: 'Subtitles & Highlighting',
               subtitle: 'Multi-language synced captions',
               icon: Icons.closed_caption,
@@ -191,6 +201,19 @@ class _SubtitleDemoState extends State<SubtitleDemo> {
             words: [
               SubtitleWord(start: 1.0, end: 1.5, text: 'Experimente'),
               SubtitleWord(start: 1.5, end: 2.0, text: 'animaciones'),
+            ],
+          ),
+        ],
+        'ar': [
+          SubtitleSegment(
+            start: 0.0,
+            end: 2.0,
+            text: 'مرحباً بكم في محرك صور PNG المتحركة',
+            words: [
+              SubtitleWord(start: 0.0, end: 0.5, text: 'مرحباً'),
+              SubtitleWord(start: 0.5, end: 1.0, text: 'بكم'),
+              SubtitleWord(start: 1.0, end: 1.5, text: 'في'),
+              SubtitleWord(start: 1.5, end: 2.0, text: 'المحرك'),
             ],
           ),
         ],
@@ -398,6 +421,43 @@ class NetworkAssetDemo extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class AudioSyncDemo extends StatelessWidget {
+  const AudioSyncDemo({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final List<String> images = List.generate(
+      18,
+      (index) => 'assets/1/${10001 + index}.png',
+    );
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Audio Synchronization')),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(24.0),
+              child: Text(
+                'This animation is automatically synced with the audio file. The duration is determined by the audio track.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
+            PngSeriesAnimator.videoPlayer(
+              imagePaths: images,
+              // Use a public sample audio for the demo
+              audioPath: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+              fit: BoxFit.contain,
+            ),
+          ],
+        ),
       ),
     );
   }

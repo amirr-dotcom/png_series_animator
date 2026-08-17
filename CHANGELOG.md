@@ -1,3 +1,12 @@
+## 1.3.0
+
+* Introduced built-in synchronized audio support via the `audioPath` property.
+* Added RTL (Right-to-Left) support for subtitles in `PngSubtitleController`.
+* Enhanced audio-visual synchronization logic using `audioplayers`.
+* Automatic duration detection based on the provided audio file.
+* Fixed several minor UI bugs in full-screen mode.
+* Enhanced documentation with JSON subtitle format examples.
+
 ## 1.2.0
 
 * Introduced `PngSubtitleController` for multi-language subtitles and captions.
