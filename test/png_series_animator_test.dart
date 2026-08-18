@@ -28,7 +28,7 @@ class TestAssetBundle extends CachingAssetBundle {
 
 void main() {
   testWidgets('PngSeriesAnimator widget builds successfully', (WidgetTester tester) async {
-    final imagePaths = ['assets/1/10001.png', 'assets/1/10002.png'];
+    final imagePaths = ['assets/1/20001.png', 'assets/1/20002.png'];
     final testBundle = TestAssetBundle();
 
     await tester.pumpWidget(

@@ -34,7 +34,7 @@ Add the package dependency to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  png_series_animator: ^1.4.0
+  png_series_animator: ^1.5.2
 ```
 
 Define your animation assets folder in your project's `pubspec.yaml`:
@@ -69,7 +69,7 @@ class MyApp extends StatelessWidget {
           child: PngSeriesAnimator(
             imagePaths: List.generate(
               18,
-              (index) => 'assets/animation/${10001 + index}.png',
+              (index) => 'assets/animation/${20001 + index}.png',
             ),
             duration: const Duration(milliseconds: 1500),
             repeat: true,

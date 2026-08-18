@@ -1,3 +1,23 @@
+## 1.5.2
+
+* Fixed example app compilation errors by aligning with the latest widget API.
+* Fixed broken asset paths in example and documentation.
+* Refined `PngSeriesController` for improved playback synchronization.
+
+## 1.5.1
+
+* Fixed example app asset paths to match repository assets.
+* Refined `PngSeriesController` synchronization logic.
+* Minor documentation updates for better clarity.
+
+## 1.5.0
+
+* **Playback Speed Control**: Added `playbackSpeed` support (0.25x to 2.0x) for both animation frames and synchronized audio.
+* **Volume Control**: Introduced `volume` control for audio-enabled sequences.
+* **Controller Upgrades**: Added `setPlaybackSpeed` and `setVolume` to `PngSeriesController` for programmatic adjustments.
+* **Performance**: Optimized `ValueNotifier` updates when changing playback speeds.
+* **Full-Screen**: Improved transition stability and UI consistency in full-screen mode.
+
 ## 1.4.0
 
 * **Audio Engine Migration**: Switched from `audioplayers` to `just_audio` and `audio_session` for superior cross-platform audio-visual synchronization and lower latency.

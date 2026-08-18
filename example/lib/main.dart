@@ -226,7 +226,7 @@ class _SubtitleDemoState extends State<SubtitleDemo> {
   Widget build(BuildContext context) {
     final List<String> images = List.generate(
       18,
-      (index) => 'assets/1/${10001 + index}.png',
+      (index) => 'assets/1/${20001 + index}.png',
     );
 
     return Scaffold(
@@ -279,7 +279,7 @@ class _ControllerDemoState extends State<ControllerDemo> {
   Widget build(BuildContext context) {
     final List<String> images = List.generate(
       18,
-      (index) => 'assets/1/${10001 + index}.png',
+      (index) => 'assets/1/${20001 + index}.png',
     );
 
     return Scaffold(
@@ -337,28 +337,45 @@ class _ControllerDemoState extends State<ControllerDemo> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    const Text('Progress:', style: TextStyle(color: Colors.grey)),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Slider(
-                        value: _currentProgress,
-                        onChanged: (val) => _controller.seekTo(val),
-                      ),
-                    ),
-                    Text(
-                      '${(_currentProgress * 100).toStringAsFixed(0)}%',
-                      style: const TextStyle(fontFeatures: [FontFeature.tabularFigures()]),
-                    ),
-                  ],
+                const SizedBox(height: 16),
+                _buildSlider(
+                  label: 'Progress',
+                  value: _currentProgress,
+                  onChanged: (val) => _controller.seekTo(val),
+                  trailing: '${(_currentProgress * 100).toStringAsFixed(0)}%',
                 ),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSlider({
+    required String label,
+    required double value,
+    required ValueChanged<double> onChanged,
+    required String trailing,
+  }) {
+    return Row(
+      children: [
+        SizedBox(width: 70, child: Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12))),
+        Expanded(
+          child: Slider(
+            value: value.clamp(0.0, 1.0),
+            onChanged: onChanged,
+          ),
+        ),
+        SizedBox(
+          width: 50,
+          child: Text(
+            trailing,
+            textAlign: TextAlign.end,
+            style: const TextStyle(fontSize: 12, fontFeatures: [FontFeature.tabularFigures()]),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -370,7 +387,7 @@ class LocalAssetDemo extends StatelessWidget {
   Widget build(BuildContext context) {
     final List<String> images = List.generate(
       18,
-      (index) => 'assets/1/${10001 + index}.png',
+      (index) => 'assets/1/${20001 + index}.png',
     );
 
     return Scaffold(
@@ -433,7 +450,7 @@ class AudioSyncDemo extends StatelessWidget {
   Widget build(BuildContext context) {
     final List<String> images = List.generate(
       18,
-      (index) => 'assets/1/${10001 + index}.png',
+      (index) => 'assets/1/${20001 + index}.png',
     );
 
     return Scaffold(
